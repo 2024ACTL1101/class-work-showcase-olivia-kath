@@ -71,7 +71,42 @@ share_size <- 100
 accumulated_shares <- 0
 
 for (i in 1:nrow(amd_df)) {
-# Fill your code here
+# Ensure strings are not converted to factors. 
+stringsAsFactors = FALSE
+
+# If the previous price = 0, OR the price of the current day is less than that of the previous day, then set the trade to buy (this process loops for each row in the dataframe). 
+# Note that today's current price is then set to 'previous_price' for the next iteration of this loop occurring the following day i.e. tomorrow. 
+for (i in 1:nrow(amd_df)) {
+ if (previous_price==0 || amd_df$close[i] < amd_df$close[i-1]) {
+   amd_df$trade_type[i] <- "buy"
+   
+   {
+     previous_price <- amd_df$close[i]
+  }
+ }
+}
+
+# Showing the value of each purchase (i.e. "buy) using the current share price multiplied by the share_size value of 100 (negative value reflects money leaving the account). Specifically, if the trade type is set to "buy", then that day's price is multiplied by -100 and added to the costs_proceeds column. 
+for (i in 1:nrow(amd_df)) {
+  amd_df$costs_proceeds[i] <- ifelse(amd_df$trade_type[i] == "buy", -share_size*amd_df$close[i], NA)
+}
+
+# The sum of all shares bought is visible in the accumulated_shares column, where 100 is added each time there is a new purchase (i.e. the trade type is set to "buy"). Note that the if statement also accounts for the existence of "NA"s in the data frame (i.e. where there are no shares being bought) and these are excluded from the sum being calculated. 
+for (i in 1:nrow(amd_df)) {
+  if (!is.na(amd_df$trade_type[i]) && amd_df$trade_type[i] == "buy") {
+    accumulated_shares <- accumulated_shares + 100
+  }
+    amd_df$accumulated_shares[i] <- accumulated_shares
+}
+
+# Finding the last day of trading (by locating the final row first), and setting trade_type to sell. 
+amd_df[nrow(amd_df), "trade_type"] <- "sell"
+
+# On the last day of trading, setting costs_proceeds to the total number of accumulated shares multiplied by the last day's share price. Note, the if statement similarly accounts for the existence of "NA"s. Altogether, the calculated value is positive and represents money returning back into the account (specifically the value of all the accumulated shares on the final day of trading where they are being sold).
+for (i in 1:nrow(amd_df)) {
+if (!is.na(amd_df$trade_type[i]) && amd_df$trade_type[i] == "sell") {
+  amd_df$costs_proceeds[i] <- amd_df$accumulated_shares[i]*amd_df$close[i]
+  }
 }
 ```
 
@@ -79,7 +114,63 @@ for (i in 1:nrow(amd_df)) {
 ### Step 3: Customize Trading Period
 - Define a trading period you wanted in the past five years 
 ```r
-# Fill your code here
+# Trading period is set from 2021-11-29 to 2022-10-14 (i.e. from the 29th November 2021 to 14th October 2022). 
+start_date <- "2021-11-29"
+end_date <- "2022-10-14"
+
+# Create a new dataframe containing all stock & trading information only within the customised trading period. This new dataframe is a subset of the original one (i.e. all rows prior to the starting date and following the end date are removed). 
+trading_period_df <- subset(amd_df, date >= start_date & date <= end_date)
+
+# The following code reiterates the original trading algorithm for this new dataframe. 
+
+# Initialize columns for trade type, cost/proceeds, and accumulated shares in trading_period_df. 
+trading_period_df$trade_type <- NA
+trading_period_df$costs_proceeds <- NA  # Corrected column name
+trading_period_df$accumulated_shares <- 0  # Initialize if needed for tracking
+
+# Initialize variables for trading logic. 
+previous_price <- 0
+share_size <- 100
+accumulated_shares <- 0
+
+# Ensure strings are not converted to factors. 
+stringsAsFactors = FALSE
+
+# If the previous price = 0, OR the price of the current day is less than that of the previous day, then set the trade to buy (this process loops for each row in the dataframe). 
+# Note that today's current price is then set to 'previous_price' for the next iteration of this loop occurring the following day i.e. tomorrow. 
+for (i in 1:nrow(trading_period_df)) {
+ if (previous_price==0 || trading_period_df$close[i] < trading_period_df$close[i-1]) {
+   trading_period_df$trade_type[i] <- "buy"
+   
+   {
+     previous_price <- trading_period_df$close[i]
+  }
+ }
+}
+
+# Showing the value of each purchase (i.e. "buy) using the current share price multiplied by the share_size value of 100 (negative value reflects money leaving the account). Specifically, if the trade type is set to "buy", then that day's price is multiplied by -100 and added to the costs_proceeds column. 
+for (i in 1:nrow(trading_period_df)) {
+  trading_period_df$costs_proceeds[i] <- ifelse(trading_period_df$trade_type[i] == "buy", -share_size*trading_period_df$close[i], NA)
+}
+
+# The sum of all shares bought is visible in the accumulated_shares column, where 100 is added each time there is a new purchase (i.e. the trade type is set to "buy"). Note that the if statement also accounts for the existence of "NA"s in the data frame (i.e. where there are no shares being bought) and these are excluded from the sum being calculated. 
+for (i in 1:nrow(trading_period_df)) {
+  if (!is.na(trading_period_df$trade_type[i]) && trading_period_df$trade_type[i] == "buy") {
+    accumulated_shares <- accumulated_shares + 100
+  }
+    trading_period_df$accumulated_shares[i] <- accumulated_shares
+}
+
+# Finding the last day of trading (by locating the final row first), and setting trade_type to sell. 
+trading_period_df[nrow(trading_period_df), "trade_type"] <- "sell"
+
+# On the last day of trading, setting costs_proceeds to the total number of accumulated shares multiplied by the last day's share price. Note, the if statement similarly accounts for the existence of "NA"s. Altogether, the calculated value is positive and represents money returning back into the account (specifically the value of all the accumulated shares on the final day of trading where they are being sold).
+for (i in 1:nrow(trading_period_df)) {
+if (!is.na(trading_period_df$trade_type[i]) && trading_period_df$trade_type[i] == "sell") {
+  trading_period_df$costs_proceeds[i] <- trading_period_df$accumulated_shares[i]*trading_period_df$close[i]
+  }
+}
+
 ```
 
 
@@ -91,7 +182,30 @@ After running your algorithm, check if the trades were executed as expected. Cal
 - ROI Formula: $$\text{ROI} = \left( \frac{\text{Total Profit or Loss}}{\text{Total Capital Invested}} \right) \times 100$$
 
 ```r
-# Fill your code here
+# Note the following PnL & ROI calculations are for the specified trading period in Step 3 (i.e. 2021-11-29 to 2022-10-14)
+
+# Finding the value of the Total Profit & Loss by taking the sum of all values (excluding "NA"s) in the costs_proceeds column. Then printing the result so the final value is visible; note the negative symbol denotes that a total LOSS has been incurred. 
+total_PnL <- sum(trading_period_df$costs_proceeds, na.rm = TRUE)
+
+print(paste0("Total Profit & Loss: $", total_PnL))
+
+# Finding the Total Capital Invested by subtracting the value of the final sale (located in the last row of the dataframe) from the Total Profit & Loss. The Total Capital Invested may be calculated this way since the trading algorithm only calls for buying stocks (never selling), aside from selling them all on the last day. Then printing the result so the final value is visible; note the total capital invested will ALWAYS be positive since this number denotes the amount of money spent on purchasing stocks. 
+for (i in 1:nrow(trading_period_df)) {
+if (!is.na(trading_period_df$trade_type[i]) && trading_period_df$trade_type[i] == "sell") {
+  total_capital_invested <- total_PnL - trading_period_df$costs_proceeds[i] 
+  }
+}
+
+if (total_capital_invested < 0) {
+  total_capital_invested <- total_capital_invested*(-1)
+}
+
+print(paste0("Total Capital Invested: $", total_capital_invested))
+
+# Substituting the calculated Total Profit & Loss and Total Capital Invested into the ROI formula. Then printing the result so the final Return on Interest is visible;
+ROI <- (total_PnL/total_capital_invested)*100
+
+print(paste0("Return on Interest: ", ROI, "%"))
 ```
 
 ### Step 5: Profit-Taking Strategy or Stop-Loss Mechanisum (Choose 1)
@@ -100,7 +214,121 @@ After running your algorithm, check if the trades were executed as expected. Cal
 
 
 ```r
-# Fill your code here
+# Start by creating another new data frame upon which the stop-loss mechanism will be applied (Option 2). Similarly to trading_periof_df, this new data frame will also be defined as a subset of the original amd_df with the same customised time frame. The following code builds off the original trading algorithm to form the stop-loss mechanism. 
+
+stoploss_mechanism_df <- subset(amd_df, date >= start_date & date <= end_date)
+
+# Customised trading period remains the same for comparison purposes; i.e. from 2021-11-29 to 2022-10-14. 
+start_date <- "2021-11-29"
+end_date <- "2022-10-14"
+
+# Initialize columns for trade type, cost/proceeds, and accumulated shares in stoploss_mechanism_df. Note that a "running average" and "threshold" column has also been created, for the purpose of demonstrating the stop-loss mechanism. 
+stoploss_mechanism_df$trade_type <- NA
+stoploss_mechanism_df$costs_proceeds <- NA  # Corrected column name
+stoploss_mechanism_df$accumulated_shares <- 0  # Initialize if needed for tracking
+stoploss_mechanism_df$running_av <- 0 
+stoploss_mechanism_df$threshold <- 0
+
+# Initialize variables for trading logic. Now, notice that the variable "result" has been globally defined as it is involved in the calculation and output of the  "average_fun" function appearing later in the code. A new variable "av" denoting the running average is also initialised here. 
+previous_price <- 0
+share_size <- 100
+accumulated_shares <- 0
+result <<- stoploss_mechanism_df$close[1]
+av <- 0
+
+# Ensure strings are not converted to factors. 
+stringsAsFactors = FALSE
+
+# Defining function that will be called upon later to calculate the running average of buy-in prices. By inputting the price of a stock on any given day, the function will add this value to the running average of all buy-in prices so far, then divide this by two (per the formula for calculating the mean or average). 
+average_fun <- function(close_value) {
+  result <- (result+close_value)/2
+  return(result)
+}
+
+# If the current price is 70% of the running average thus far (30% drop) or less, then activate stoploss mechanism and mark as "sell". Then similarly to the original strategy, define that if the previous price = 0, OR the price of the current day is less than that of the previous day, set the trade to buy. (This process loops for each row in the dataframe). 
+# Note that today's current price is then set to 'previous_price' for the next iteration of this loop occurring the following day i.e. tomorrow. The running average for each row is also noted in the data frame, as well as the threshold which is defined as 70% multiplied by the average purchase price that day. 
+for (i in 1:nrow(stoploss_mechanism_df)) {
+  if (stoploss_mechanism_df$close[i] <= av*(7/10)) {
+    stoploss_mechanism_df$trade_type[i] <- "sell"
+  }
+  else{
+    if (previous_price==0 || stoploss_mechanism_df$close[i] <         
+        stoploss_mechanism_df$close[i-1]) {
+        stoploss_mechanism_df$trade_type[i] <- "buy"
+        av <- average_fun(stoploss_mechanism_df$close[i])
+    }
+  }
+  previous_price <- stoploss_mechanism_df$close[i]
+  stoploss_mechanism_df$running_av[i] <- av
+  stoploss_mechanism_df$threshold[i] <- av*(7/10)
+ }
+
+# The sum of all shares bought is visible in the accumulated_shares column, where 100 is added each time there is a new purchase (i.e. the trade type is set to "buy"). The total accumulated shares are halved where there is a trade marked "sell" (as per the stoploss mechanism). Note that the if statement also accounts for the existence of "NA"s in the data frame (i.e. where there are no shares being bought) and these are excluded from the sum being calculated. 
+for (i in 1:nrow(stoploss_mechanism_df)) {
+  if (!is.na(stoploss_mechanism_df$trade_type[i]) && 
+      stoploss_mechanism_df$trade_type[i] == "sell") {
+      accumulated_shares <- accumulated_shares/2
+  }
+  if (!is.na(stoploss_mechanism_df$trade_type[i]) && 
+      stoploss_mechanism_df$trade_type[i] == "buy") {
+      accumulated_shares <- accumulated_shares + 100
+  }
+  stoploss_mechanism_df$accumulated_shares[i] <- accumulated_shares
+}
+
+# Showing the value of each purchase (i.e. "buy) using the current share price multiplied by the share_size value of 100 (negative value reflects money leaving the account). Specifically, if the trade type is set to "buy", then that day's price is multiplied by -100 and added to the costs_proceeds column. To then account for "sell" transactions, the accumulates shares are multiplied by the share price on that day, with this positive value recorded in the costs_proceeds column (representing funds returning back into the account). 
+for (i in 1:nrow(stoploss_mechanism_df)) {
+      stoploss_mechanism_df$costs_proceeds[i] <- 
+     ifelse(stoploss_mechanism_df$trade_type[i] == "buy", 
+            -share_size*stoploss_mechanism_df$close[i], 
+            ifelse(stoploss_mechanism_df$trade_type[i] == "sell", 
+                   stoploss_mechanism_df$accumulated_shares[i]*stoploss_mechanism_df$
+                     close[i], NA))
+}
+
+# Finding the last day of trading (by locating the final row first), and setting trade_type to "sold".  
+stoploss_mechanism_df[nrow(stoploss_mechanism_df), "trade_type"] <- "sold"
+
+# On the last day of trading, setting costs_proceeds to the total number of accumulated shares multiplied by the last day's share price. Note, the if statement similarly accounts for the existence of "NA"s. Altogether, the calculated value is positive and represents money returning back into the account (specifically the value of all the accumulated shares on the final day of trading where they are being sold).
+for (i in 1:nrow(stoploss_mechanism_df)) {
+  if (!is.na(stoploss_mechanism_df$trade_type[i]) &&  
+      stoploss_mechanism_df$trade_type[i] == "sold") {
+      stoploss_mechanism_df$costs_proceeds[i] <-   
+      stoploss_mechanism_df$accumulated_shares[i]*stoploss_mechanism_df$close[i]
+  }
+}
+
+# Following PnL & ROI calculations are for the specified trading period in Step 3 (i.e. 2021-11-29 to 2022-10-14), when using the stop-loss mechanism. 
+
+# Finding the value of the Total Profit & Loss by taking the sum of all values (excluding NAs) in costs_proceeds
+total_PnL_stoploss <- sum(stoploss_mechanism_df$costs_proceeds, na.rm = TRUE)
+
+print(paste0("Total Profit & Loss (Stop-Loss): ", total_PnL_stoploss))
+
+# Finding the Total Capital Invested. First create a new variable "soldcapital", which is identified as all values in the costs_proceeds column that are greater than 0, hence indicating that shares were sold since money is returning into the account (thus a positive number). All these values are summed and then subtracted from the Total Profit & Loss to obtain the value of the Total Capital Invested. 
+soldcapital <<- 0
+for (i in 1:nrow(stoploss_mechanism_df)) {
+  if (!is.na(stoploss_mechanism_df$trade_type[i]) &&   
+      stoploss_mechanism_df$costs_proceeds[i] > 0) {
+      soldcapital <<- soldcapital + stoploss_mechanism_df$costs_proceeds[i]
+  }
+}
+
+print(paste0("Sold Capital (Stop-Loss): $", soldcapital))
+
+total_capital_invested_stoploss <- total_PnL_stoploss - soldcapital
+
+# Ensures that Total Capital Invested is always a positive value. 
+if (total_capital_invested_stoploss < 0) {
+   total_capital_invested_stoploss <- total_capital_invested_stoploss*(-1)
+}
+
+print(paste0("Total Capital Invested (Stop-Loss): $", total_capital_invested_stoploss))
+
+# Substituting calculated Total Profit & Loss and Total Capital Invested into ROI formula. 
+ROI_stoploss <- (total_PnL_stoploss/total_capital_invested_stoploss)*100
+
+print(paste0("Return on Interest (Stop-Loss): ", total_PnL, "%"))
 ```
 
 
@@ -110,11 +338,31 @@ After running your algorithm, check if the trades were executed as expected. Cal
 
 
 ```r
-# Fill your code here and Disucss
+# Note ALL following financial metrics are for the chosen trading period as defined in Step 3 (i.e. 29/11/2021 to 14/10/2022). 
+
+# Displaying values for financial metrics using the original trading strategy
+print("Financial Metrics with Original Trading Strategy")
+print(paste0("Total Profit & Loss: $", total_PnL))
+print(paste0("Return on Interest (ROI): ", ROI, "%"))
+
+# Displaying values for financial metrics using the stop-loss mechanism
+print("Financial Metrics with Stop-Loss Mechanism")
+print(paste0("Total Profit & Loss: $", total_PnL_stoploss))
+print(paste0("Return on Interest (ROI): ", ROI_stoploss, "%"))
 ```
+For the purposes of this discussion, all calculated metrics are printed here. Also note that all numerical values will be rounded and considered to two decimal places. 
 
-Sample Discussion: On Wednesday, December 6, 2023, AMD CEO Lisa Su discussed a new graphics processor designed for AI servers, with Microsoft and Meta as committed users. The rise in AMD shares on the following Thursday suggests that investors believe in the chipmaker's upward potential and market expectations; My first strategy earned X dollars more than second strategy on this day, therefore providing a better ROI.
+**Question 1: Did your P/L and ROI improve over your chosen period?**
 
+  The original trading algorithm saw a total loss of $552439.01 during the specified time period between the 29th November 2021 and the 14th October 2022. The loss was reduced by $214469.06 when the stop-loss mechanism was implemented during the same time period, ending with a total loss of $337969.95. Overall, it is evident that the financial loss incurred using the stop-loss mechanism was less than the original trading algorithm. In this sense, the stop-loss mechanism produced a better outcome. However, since both algorithms produced an overall loss, it may be concluded that neither strategy is particularly desirable. 
+  
+  The original trading algorithm saw a return on interest (ROI) of approximately -44.53% also during this time period. The loss was reduced by 15.01% when the stop-loss mechanism was implemented during the same time period, ending with a total ROI of -29.52%. Overall, it is similarly evident that the ROI using the stop-loss mechanism was greater than the original trading algorithm. In this sense, the stop-loss mechanism produced a better outcome. Again, however, since both algorithms produced an overall negative ROI, it may be concluded that neither strategy is particularly desirable. 
+  
+  The ultimate goal would be to develop a trading algorithm that returned figures that are positive and as high as possible, indicating overall profits and high returns on interest. This would be a desirable outcome. However, it should be taken into account that the defined trading period saw an overall mass decline in the value of the AMD stock from approximately the beginning to the end of 2022. And so, regardless of the trading strategy used including both the original algorithm and the stop-loss mechanism, it would be extremely difficult to generate high profits, if any at all, when attempting to buy and sell during this period. 
+  
+  
+**Question 2: Relate your results to a relevant market event and explain why these outcomes may have occured.**
 
+December 2021 lies at the beginning of the defined trading period. It is evident that the AMD stock hit a record high during this month, which may be attributed to its strong PC sales during the international COVID-19 pandemic. With many individuals working, studying, and experiencing entertainment at home during lockdown periods, the AMD stock value was driven up significantly as the large volume of computer sales appealed to investors. Furthermore, there had been a reported collaboration between AMD and Microsoft with the two companies working on new developments in the cloud computing market. There were also new AMD product announcements at this time, all being designed to compete with NVIDIA and Intel. The culmination of these market events toward the end of 2021 cultivated excitement and anticipation among investors, thus boosting their confidence and resulting in a local maximum stock value. 
 
-
+However, after this initial spike, the AMD stock value declined significantly for the remainder of the defined trading period, lasting approximately 12 months. For the first half of 2022, their stock decline is largely attributed to the Federal Reserve persistently raising interest rates. This saw high inflation that negatively impacted AMD growth stocks, as it eroded purchasing power and saw increased costs for companies, negatively affecting AMD's profit margins. The macroeconomic impacts became particularly apparent when some of AMD's earnings reports failed to meet market expectations. Adding to the company's additional costs in 2022 was their acquisition of Xilinx. Although a strategic move, the short-term financial impacts of this large deal caused further concerns to investors. Consequently, additional pressure on their stock continued to drive its value down during the year. Overall, the various challenges AMD faced during 2022 resulted in the stock's overall declining value from an initial peak within the defined trading period. 
